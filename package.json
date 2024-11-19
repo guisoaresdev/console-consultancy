@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start": "tsc -p tsconfig.json"
+    "start": "npx tsx index.ts"
   },
   "dependencies": {
     "prompt-sync": "^4.2.0",
