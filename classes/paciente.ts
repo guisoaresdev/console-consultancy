@@ -4,17 +4,38 @@ export default class Paciente {
   private data_nasc: Date;
   private idade: number;
 
-  constructor(cpf: string, nome: string, data_nasc: Date) {
+  private constructor(cpf: string, nome: string, data_nasc: Date) {
     this.setCpf(cpf);
     this.setNome(nome);
     this.setData_nasc(data_nasc);
+  }
+
+  static criarPaciente(
+    cpf: string,
+    nome: string,
+    data_nasc: Date,
+  ): Paciente | null {
+    if (!Paciente.isValidCPF(cpf)) {
+      console.log("Paciente não possui um CPF válido, tente novamente.");
+      return null;
+    }
+    if (nome.trim().length === 0) {
+      console.log("Nome não pode ser vázio");
+      return null;
+    }
+
+    if (isNaN(data_nasc.getTime())) {
+      console.log("Data de nascimento inválida");
+      return null;
+    }
+    return new Paciente(cpf, nome, data_nasc);
   }
 
   getCpf() {
     return this.cpf;
   }
 
-  setCpf(value: string) {
+  private setCpf(value: string) {
     this.cpf = value;
   }
 
@@ -22,7 +43,7 @@ export default class Paciente {
     return this.nome;
   }
 
-  setNome(value: string) {
+  private setNome(value: string) {
     this.nome = value;
   }
 
@@ -30,7 +51,7 @@ export default class Paciente {
     return this.data_nasc;
   }
 
-  setData_nasc(value: Date) {
+  private setData_nasc(value: Date) {
     this.data_nasc = value;
     this.idade = this.calcularIdade(value);
   }
@@ -49,7 +70,7 @@ export default class Paciente {
     return idade;
   }
 
-  private isValidCPF(cpf: string): boolean {
+  private static isValidCPF(cpf: string): boolean {
     cpf = cpf.replace(/[^\d]+/g, "");
     if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
 

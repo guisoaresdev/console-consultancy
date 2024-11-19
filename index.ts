@@ -2,14 +2,10 @@ import PromptSync from "prompt-sync";
 import Agenda from "./classes/agenda";
 import Paciente from "./classes/paciente";
 
-/* TODO: FUNCIONALIDADES FALTANTES:
-   1. Conseguir vincular um paciente existente a um agendamento 
-   2. Não permitir inserir CPF duplicado
-   3. Não permitir inserir uma data anterior ao dia de hoje no agendamento
-*/
-
+/*  TODO: Implementar testes? */
 const prompt = PromptSync();
 const agenda = new Agenda();
+var pacientes: Paciente[] = [];
 
 function menuPrincipal() {
   let option;
@@ -40,16 +36,40 @@ function menuPrincipal() {
 function cadastrarPaciente() {
   try {
     const cpf = prompt("Informe o CPF: ");
+    let isDuplicate = false;
+    for (let i = 0; i < pacientes.length; i++) {
+      if (pacientes[i].getCpf() == cpf) {
+        throw new Error("CPF já cadastrado");
+      }
+    }
     const nome = prompt("Informe o nome: ");
     const dataNasc = new Date(
       prompt("Informe a data de nascimento (YYYY-MM-DD): "),
     );
 
-    const paciente = new Paciente(cpf, nome, dataNasc);
-    console.log("Paciente cadastrado com sucesso!");
-    return paciente;
+    if (isNaN(dataNasc.getTime())) {
+      throw new Error("Data de Nascimento inválida");
+    }
+
+    const dataAtual = new Date();
+    if (dataNasc > dataAtual) {
+      throw new Error("Data de Nascimento no futuro não é permitida");
+    }
+
+    const paciente = Paciente.criarPaciente(cpf, nome, dataNasc);
+    if (paciente) {
+      pacientes.push(paciente);
+      console.log("Paciente criado com sucesso!");
+      return paciente;
+    } else {
+      return null;
+    }
   } catch (error) {
-    console.log(`Erro ao cadastrar paciente: ${error}`);
+    console.log(
+      "Erro ao cadastrar paciente: " +
+        (error instanceof Error ? error.message : error),
+    );
+    return null;
   }
 }
 
@@ -65,11 +85,41 @@ function menuAgenda() {
 
     switch (option) {
       case 1:
-        const paciente = cadastrarPaciente();
+        var paciente: Paciente | null = null;
+        if (pacientes.length != 0) {
+          const pacienteExistente = prompt(
+            "Deseja vincular um paciente já existente ao agendamento? (Y/N): ",
+          );
+          if (pacienteExistente == "Y") {
+            const indexPaciente = parseInt(
+              prompt(
+                "Insira o index do paciente que deseja marcar a consulta: ",
+              ),
+            );
+            if (indexPaciente <= pacientes.length) {
+              paciente = pacientes[indexPaciente];
+            } else {
+              console.log("Index do paciente inválido");
+            }
+          } else {
+            paciente = cadastrarPaciente();
+          }
+        } else {
+          console.log(
+            "Nenhum paciente registrado no sistema, criando novo paciente.",
+          );
+          paciente = cadastrarPaciente();
+        }
         if (paciente) {
           const dataConsulta = new Date(
             prompt("Informe a data da consulta (YYYY-MM-DD): "),
           );
+
+          if (dataConsulta < new Date()) {
+            throw new Error(
+              "Data Inválida: Consulta com dia anterior a data de hoje",
+            );
+          }
           const horaInicial = prompt("Informe a hora inicial (HH:mm): ");
           const horaFinal = prompt("Informe a hora final (HH:mm): ");
 
@@ -80,8 +130,13 @@ function menuAgenda() {
             hora_final: horaFinal,
           });
           console.log("Consulta agendada com sucesso!");
+          break;
+        } else {
+          console.log(
+            "Paciente está null, impossível finalizar o agendamento. Retornando para o menu: ",
+          );
+          break;
         }
-        break;
       case 2:
         console.log("Listando agenda...");
         agenda.printAgendaFormatada();

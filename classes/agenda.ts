@@ -26,7 +26,7 @@ export default class Agenda {
 
   printAgendaFormatada() {
     console.log("------------------------------------------------------------");
-    console.log("CPF Nome                           Dt.Nasc.    Idade");
+    console.log("CPF Nome                                   Dt.Nasc.    Idade");
     console.log("------------------------------------------------------------");
 
     this.ordenarPorData().forEach(
