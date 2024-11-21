@@ -1,4 +1,6 @@
 export default class Paciente {
+  static NOME_TAMANHO_MINIMO = 5;
+
   private cpf: string;
   private nome: string;
   private data_nasc: Date;
