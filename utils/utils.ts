@@ -8,15 +8,10 @@ export function isCpfDuplicado(pacientes, cpf): boolean {
   return isDuplicated;
 }
 
-export function temAgendamentoFuturo(indexPaciente: number, pacientes: Paciente[], agenda: Agenda): boolean {
-  const paciente = pacientes[indexPaciente];
-
+export function temAgendamentoFuturo(cpf: string, agenda: Agenda): boolean {
   for (const agendamento of agenda.getListaAgendamento()) {
-    if (agendamento.paciente.getCpf() === paciente.getCpf()) {
-      // Verifica se o agendamento é no futuro
-      if (agendamento.data_consulta > new Date()) {
-        return true;
-      }
+    if (agendamento.paciente.getCpf() === cpf && agendamento.data_consulta > new Date()) {
+      return true;
     }
   }
   return false;
@@ -39,7 +34,6 @@ export function cancelaConsulta(cpf: string, dataConsulta: Date, horaInicial: st
     const agora = new Date();
 
 
-    // Verificar se o agendamento é futuro
     if (
       agendamento.data_consulta > agora ||
       (agendamento.data_consulta.getTime() === agora.getTime() && agendamento.hora_inicial > agora.toLocaleTimeString())
@@ -52,6 +46,18 @@ export function cancelaConsulta(cpf: string, dataConsulta: Date, horaInicial: st
       return false;
     }
   }
+
+function isAgendamentoExpirado(agendamento: Agendamento): boolean {
+  return agendamento.data_consulta <= new Date();
+}
+
+export function limpaConsultasExpiradas(cpf: string, agenda: Agenda): void {
+  const novasConsultas: Agendamento[] = agenda.getListaAgendamento().filter(
+    (agendamento) => agendamento.paciente.getCpf() !== cpf || !isAgendamentoExpirado(agendamento)
+  );
+  agenda.setListaAgendamento(novasConsultas);
+  console.log("Agendamentos expirados removidos com sucesso.");
+}
 
 export function removeAgendamentosExpirados(indexPaciente: number, pacientes: Paciente[], agenda: Agenda): void {
   const paciente = pacientes[indexPaciente];

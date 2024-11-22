@@ -22,6 +22,12 @@ const prompt = PromptSync();
 var agenda = new Agenda();
 var pacientes: Paciente[] = [];
 
+// TODO: Refatoração pós avaliação:
+// 1. Encapsular os funcionalidades do consultório (Classe Consultório)
+// 2. Separar a UI do dominio, do controle
+// 3. Criar funcionalidade de setup pra realizar a injeção das dependencias e afins
+//
+
 function menuPrincipal() {
   let option;
   do {
@@ -266,31 +272,29 @@ function cadastrarPaciente() {
 function removerPaciente() {
   try {
     let possuiAgendamento: boolean = true;
-    let indexRemoverPaciente: number | null = null;
+    let cpfRemoverPaciente: string;
 
     while (possuiAgendamento) {
-      indexRemoverPaciente = parseInt(
-        prompt("Insira o index do paciente que deseja remover: ") || "0",
+      cpfRemoverPaciente = prompt(
+        "Insira o CPF do paciente que deseja remover: ",
       );
 
-      if (
-        indexRemoverPaciente >= pacientes.length ||
-        indexRemoverPaciente < 0
-      ) {
-        console.log("Index do paciente inexistente");
+      const pacienteIndex = pacientes.findIndex(
+        (paciente) => paciente.getCpf() === cpfRemoverPaciente,
+      );
+      if (pacienteIndex === -1) {
+        console.log("CPF não encontrado no sistema");
         continue;
       }
 
-      // Verifica se o paciente possui agendamentos válidos
-      if (temAgendamentoFuturo(indexRemoverPaciente, pacientes, agenda)) {
+      if (temAgendamentoFuturo(cpfRemoverPaciente, agenda)) {
         console.log("Paciente possui agendamentos ainda válidos");
         continue;
       }
 
-      // Remove agendamentos expirados
-      cancelarConsulta();
-      // Remove o paciente da lista
-      pacientes.splice(indexRemoverPaciente, 1);
+      limpaConsultasExpiradas(cpfRemoverPaciente, agenda);
+
+      pacientes.splice(pacienteIndex, 1);
       possuiAgendamento = false; // Sai do loop
       console.log("Paciente removido com sucesso");
     }
