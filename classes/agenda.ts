@@ -1,5 +1,7 @@
 import Paciente from "./paciente";
 
+import { temAgendamentoFuturo } from "../utils/utils";
+
 type Agendamento = {
   paciente: Paciente;
   data_consulta: Date;

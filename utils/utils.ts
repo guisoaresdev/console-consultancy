@@ -22,6 +22,37 @@ export function temAgendamentoFuturo(indexPaciente: number, pacientes: Paciente[
   return false;
 }
 
+export function cancelaConsulta(cpf: string, dataConsulta: Date, horaInicial: string, agenda: Agenda): boolean {
+    const agendamentoIndex = agenda.getListaAgendamento().findIndex(
+      ({ paciente, data_consulta, hora_inicial }) =>
+        paciente.getCpf() === cpf &&
+        data_consulta.getTime() === dataConsulta.getTime() &&
+        hora_inicial === horaInicial
+    );
+
+    if (agendamentoIndex === -1) {
+      console.log("Agendamento não encontrado.");
+      return false;
+    }
+
+    const agendamento = agenda.getListaAgendamento()[agendamentoIndex];
+    const agora = new Date();
+
+
+    // Verificar se o agendamento é futuro
+    if (
+      agendamento.data_consulta > agora ||
+      (agendamento.data_consulta.getTime() === agora.getTime() && agendamento.hora_inicial > agora.toLocaleTimeString())
+    ) {
+      agenda.getListaAgendamento().splice(agendamentoIndex, 1);
+      console.log("Agendamento cancelado com sucesso.");
+      return true;
+    } else {
+      console.log("Não é possível cancelar um agendamento passado.");
+      return false;
+    }
+  }
+
 export function removeAgendamentosExpirados(indexPaciente: number, pacientes: Paciente[], agenda: Agenda): void {
   const paciente = pacientes[indexPaciente];
   

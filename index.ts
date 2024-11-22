@@ -14,6 +14,7 @@ import {
   validarDisponibilidadeHorario,
   validarHoraAgendamento,
   temAgendamentoFuturo,
+  cancelaConsulta,
   removeAgendamentosExpirados,
   listaPacientesComAgendamentos,
 } from "./utils/utils";
@@ -302,30 +303,107 @@ function removerPaciente() {
   }
 }
 
+function cancelarConsulta() {
+  let cpfValido: boolean = false;
+  let validaDataConsulta: boolean = false;
+  let validaHorarioInicial: boolean = false;
+  var cpf = prompt("Informe um CPF válido: ");
+  while (!cpfValido) {
+    cpf = formatarCpf(cpf);
+
+    if (!isCpfDuplicado(pacientes, cpf)) {
+      console.log("CPF não encontrado");
+      cpf = prompt("Informe um CPF válido: ");
+      continue;
+    }
+
+    cpfValido = true;
+  }
+
+  var dataConsultaIn: Date;
+
+  var dataConsultaInput = prompt("Digite a data da consulta (dd/mm/yyyy): ");
+  while (!validaDataConsulta) {
+    if (!validaFormatoData(dataConsultaInput)) {
+      console.log("Data deve ser no formato DD/MM/YYYY");
+      dataConsultaInput = prompt("Digite a data da consulta (dd/mm/yyyy): ");
+      continue;
+    }
+
+    dataConsultaIn = formataData(dataConsultaInput);
+    if (!validaData(dataConsultaIn)) {
+      console.log("Data da consulta inválida");
+      dataConsultaInput = prompt("Digite a data da consulta (dd/mm/yyyy): ");
+      continue;
+    }
+
+    if (dataConsultaIn < new Date()) {
+      console.log("Data Inválida: Consulta com dia anterior a data de hoje");
+      dataConsultaInput = prompt("Digite a data da consulta (dd/mm/yyyy): ");
+      continue;
+    }
+
+    validaDataConsulta = true;
+  }
+
+  var horaInicial = prompt("Digite a hora inicial da consulta (hh:mm): ");
+  while (!validaHorarioInicial) {
+    if (!validarHorario(horaInicial)) {
+      console.log("As horas devem ser no formato HH:mm");
+      horaInicial = prompt("Informe a hora inicial (HH:mm): ");
+      continue;
+    }
+
+    if (!validarDisponibilidadeHorario(horaInicial)) {
+      console.log(
+        "Os horários disponíveis são de 15 em 15 minutos. Ex: 20:00, 20:15, 20:30",
+      );
+      horaInicial = prompt("Informe a hora inicial (HH:mm): ");
+      continue;
+    }
+
+    validaHorarioInicial = true;
+  }
+
+  const [dia, mes, ano] = dataConsultaInput.split("/").map(Number);
+  const dataConsulta = new Date(ano, mes - 1, dia);
+
+  const sucesso = cancelaConsulta(cpf, dataConsulta, horaInicial, agenda);
+
+  if (!sucesso) {
+    console.log("Falha no cancelamento do agendamento.");
+  }
+}
+
 function menuAgenda() {
   let option;
   do {
     console.log("\nAgenda");
     console.log("1 - Agendar consulta");
-    console.log("2 - Listar agenda");
-    console.log("3 - Voltar para o menu principal");
+    console.log("2 - Cancelar consulta");
+    console.log("3 - Listar agenda");
+    console.log("4 - Voltar para o menu principal");
 
     option = parseInt(prompt("Escolha uma opção: "));
 
     switch (option) {
       case 1:
         agendarConsulta();
+        break;
       case 2:
+        cancelarConsulta();
+        break;
+      case 3:
         console.log("Listando agenda...");
         agenda.printAgendaFormatada();
         break;
-      case 3:
+      case 4:
         console.log("Voltando ao menu principal...");
         break;
       default:
         console.log("Opção inválida, tente novamente.");
     }
-  } while (option !== 3);
+  } while (option !== 4);
 }
 
 // Inicia o programa
