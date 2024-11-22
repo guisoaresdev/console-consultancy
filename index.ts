@@ -288,8 +288,7 @@ function removerPaciente() {
       }
 
       // Remove agendamentos expirados
-      removeAgendamentosExpirados(indexRemoverPaciente, pacientes, agenda);
-
+      cancelarConsulta();
       // Remove o paciente da lista
       pacientes.splice(indexRemoverPaciente, 1);
       possuiAgendamento = false; // Sai do loop
