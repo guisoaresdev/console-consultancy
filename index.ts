@@ -13,18 +13,23 @@ import {
   validarHorario,
   validarDisponibilidadeHorario,
   validarHoraAgendamento,
+  temAgendamentoFuturo,
+  removeAgendamentosExpirados,
+  listaPacientesComAgendamentos,
 } from "./utils/utils";
 const prompt = PromptSync();
-const agenda = new Agenda();
+var agenda = new Agenda();
 var pacientes: Paciente[] = [];
 
 function menuPrincipal() {
   let option;
   do {
     console.log("\nMenu Principal");
-    console.log("1 - Cadastro de pacientes");
-    console.log("2 - Agenda");
-    console.log("3 - Sair");
+    console.log("1 - Cadastrar um paciente");
+    console.log("2 - Remover um paciente");
+    console.log("3 - Listar Pacientes");
+    console.log("4 - Agenda");
+    console.log("5 - Sair");
 
     option = parseInt(prompt("Escolha uma opção: "));
 
@@ -33,15 +38,22 @@ function menuPrincipal() {
         cadastrarPaciente();
         break;
       case 2:
-        menuAgenda();
+        listaPacientesComAgendamentos(pacientes, agenda);
+        removerPaciente();
         break;
       case 3:
+        listaPacientesComAgendamentos(pacientes, agenda);
+        break;
+      case 4:
+        menuAgenda();
+        break;
+      case 5:
         console.log("Encerrando o programa...");
         break;
       default:
         console.log("Opção inválida, tente novamente.");
     }
-  } while (option !== 3);
+  } while (option !== 5);
 }
 
 function agendarConsulta(): void {
@@ -55,11 +67,7 @@ function agendarConsulta(): void {
         "Deseja vincular um paciente já existente ao agendamento? (Y/N): ",
       );
       if (pacienteExistente == "Y") {
-        console.log("Pacientes Cadastrados: ");
-        for (let i = 0; i < pacientes.length; i++) {
-          console.log(`Index: ${i}, Nome: ${pacientes[i].getNome()};`);
-        }
-
+        listaPacientesComAgendamentos(pacientes, agenda);
         const indexPaciente = parseInt(
           prompt("Insira o index do paciente que deseja marcar a consulta: "),
         );
@@ -251,6 +259,46 @@ function cadastrarPaciente() {
         (error instanceof Error ? error.message : error),
     );
     return null;
+  }
+}
+
+function removerPaciente() {
+  try {
+    let possuiAgendamento: boolean = true;
+    let indexRemoverPaciente: number | null = null;
+
+    while (possuiAgendamento) {
+      indexRemoverPaciente = parseInt(
+        prompt("Insira o index do paciente que deseja remover: ") || "0",
+      );
+
+      if (
+        indexRemoverPaciente >= pacientes.length ||
+        indexRemoverPaciente < 0
+      ) {
+        console.log("Index do paciente inexistente");
+        continue;
+      }
+
+      // Verifica se o paciente possui agendamentos válidos
+      if (temAgendamentoFuturo(indexRemoverPaciente, pacientes, agenda)) {
+        console.log("Paciente possui agendamentos ainda válidos");
+        continue;
+      }
+
+      // Remove agendamentos expirados
+      removeAgendamentosExpirados(indexRemoverPaciente, pacientes, agenda);
+
+      // Remove o paciente da lista
+      pacientes.splice(indexRemoverPaciente, 1);
+      possuiAgendamento = false; // Sai do loop
+      console.log("Paciente removido com sucesso");
+    }
+  } catch (error) {
+    console.log(
+      "Erro ao remover um paciente: " +
+        (error instanceof Error ? error.message : error),
+    );
   }
 }
 

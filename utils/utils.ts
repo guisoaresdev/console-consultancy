@@ -8,6 +8,58 @@ export function isCpfDuplicado(pacientes, cpf): boolean {
   return isDuplicated;
 }
 
+export function temAgendamentoFuturo(indexPaciente: number, pacientes: Paciente[], agenda: Agenda): boolean {
+  const paciente = pacientes[indexPaciente];
+
+  for (const agendamento of agenda.getListaAgendamento()) {
+    if (agendamento.paciente.getCpf() === paciente.getCpf()) {
+      // Verifica se o agendamento é no futuro
+      if (agendamento.data_consulta > new Date()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+export function removeAgendamentosExpirados(indexPaciente: number, pacientes: Paciente[], agenda: Agenda): void {
+  const paciente = pacientes[indexPaciente];
+  
+  // Filtra e remove os agendamentos expirados do paciente
+  agenda.setListaAgendamento(agenda.getListaAgendamento().filter(agendamento => {
+    return !(agendamento.paciente.getCpf() === paciente.getCpf() && agendamento.data_consulta < new Date());
+  }));
+}
+
+export function listaPacientesComAgendamentos(pacientes: Paciente[], agenda: Agenda) {
+  console.log("------------------------------------------------------------");
+  console.log("Index CPF            Nome                          Dt.Nasc.   Idade");
+  console.log("------------------------------------------------------------");
+
+  pacientes.forEach((paciente, index) => {
+    const cpf = paciente.getCpf().padEnd(12, " ");
+    const nome = paciente.getNome().padEnd(30, " ");
+    const dataNasc = paciente
+      .getData_nasc()
+      .toLocaleDateString("pt-BR", { timeZone: "UTC" });
+    const idade = paciente.getIdade().toString().padStart(3, " ");
+    console.log(`${index}    ${cpf} ${nome} ${dataNasc} ${idade}`);
+
+    // Busca agendamento para o paciente
+    const agendamento = agenda.getListaAgendamento().find(
+      (a) => a.paciente.getCpf() === paciente.getCpf()
+    );
+
+    if (agendamento) {
+      console.log(`Agendado para: ${agendamento.data_consulta.toLocaleDateString("pt-BR", { timeZone: "UTC" })}`);
+      console.log(`${agendamento.hora_inicial} às ${agendamento.hora_final}`);
+    }
+    console.log(""); // Linha em branco para separar os pacientes
+  });
+
+  console.log("------------------------------------------------------------");
+}
+
 export function isCpfValido(cpf): boolean {
   let newCpf = cpf.replace(/[^\d]+/g, "");
   if (newCpf.length !== 11 || /^(\d)\1+$/.test(newCpf)) return false;

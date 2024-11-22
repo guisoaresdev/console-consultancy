@@ -10,8 +10,12 @@ type Agendamento = {
 export default class Agenda {
   private listaAgendamento: Agendamento[] = [];
 
-  getListaAgendamento() {
+  getListaAgendamento(): Agendamento[] {
     return this.listaAgendamento;
+  }
+
+  setListaAgendamento(lista: Agendamento[]): void {
+    this.listaAgendamento = lista;
   }
 
   agendarConsulta(agendamento: Agendamento) {
@@ -19,9 +23,7 @@ export default class Agenda {
   }
 
   ordenarPorData() {
-    return this.getListaAgendamento().sort(
-      (a, b) => a.data_consulta.getTime() - b.data_consulta.getTime(),
-    );
+    return this.getListaAgendamento().sort((a, b) => a.data_consulta.getTime() - b.data_consulta.getTime());
   }
 
   printAgendaFormatada() {
