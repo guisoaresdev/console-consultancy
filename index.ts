@@ -2,7 +2,7 @@ import PromptSync from "prompt-sync";
 import Agenda from "./classes/agenda";
 import Paciente from "./classes/paciente";
 
-/*  TODO: Implementar testes? */
+/*  TODO: TODO: */
 const prompt = PromptSync();
 const agenda = new Agenda();
 var pacientes: Paciente[] = [];
@@ -33,7 +33,10 @@ function menuPrincipal() {
   } while (option !== 3);
 }
 
-function agendamentoConsulta(): void {
+function agendarConsulta(): void {
+  var validaDataConsulta: boolean = false;
+  var validaHorarioInicial: boolean = false;
+  var validaHorarioFinal: boolean = false;
   try {
     var paciente: Paciente | null = null;
     if (pacientes.length != 0) {
@@ -64,20 +67,72 @@ function agendamentoConsulta(): void {
       paciente = cadastrarPaciente();
     }
     if (paciente) {
-      const dataConsulta = new Date(
-        prompt("Informe a data da consulta (YYYY-MM-DD): "),
-      );
+      var dataConsulta: Date;
+      var dataConsultaStr = prompt("Informe a data da consulta (DD/MM/YYYY): ");
 
-      if (dataConsulta < new Date()) {
-        throw new Error(
-          "Data Inválida: Consulta com dia anterior a data de hoje",
-        );
+      while (!validaDataConsulta) {
+        if (!validaFormatoData(dataConsultaStr)) {
+          console.log("Data deve ser no formato DD/MM/YYYY");
+          dataConsultaStr = prompt("Informe a data da consulta (DD/MM/YYYY): ");
+          continue;
+        }
+
+        dataConsulta = formataData(dataConsultaStr);
+        if (!validaData(dataConsulta)) {
+          console.log("Data da consulta inválida");
+          dataConsultaStr = prompt("Informe a data da consulta (DD/MM/YYYY): ");
+          continue;
+        }
+
+        if (dataConsulta < new Date()) {
+          console.log( "Data Inválida: Consulta com dia anterior a data de hoje");
+          dataConsultaStr = prompt("Informe a data da consulta (DD/MM/YYYY): ");
+          continue;
+        }
+
+        validaDataConsulta = true;
       }
-      const horaInicial = prompt("Informe a hora inicial (HH:mm): ");
-      const horaFinal = prompt("Informe a hora final (HH:mm): ");
+      var horaInicial = prompt("Informe a hora inicial (HH:mm): ");
+      while (!validaHorarioInicial) {
+        if (!validarHorario(horaInicial)) {
+          console.log("As horas devem ser no formato HH:mm");
+          horaInicial = prompt("Informe a hora inicial (HH:mm): ");
+          continue;
+        }
+
+        if (!validarDisponibilidadeHorario(horaInicial)) {
+          console.log( "Os horários disponíveis são de 15 em 15 minutos. Ex: 20:00, 20:15, 20:30");
+          horaInicial = prompt("Informe a hora inicial (HH:mm): ");
+          continue;
+        }
+
+        validaHorarioInicial = true;
+      }
+
+      var horaFinal = prompt("Informe a hora final (HH:mm): ");
+      while (!validaHorarioFinal) {
+        if (!validarHorario(horaFinal)) {
+          console.log("As horas devem ser no formato HH:mm");
+          horaFinal = prompt("Informe a hora inicial (HH:mm): ");
+          continue;
+        }
+
+        if (!validarDisponibilidadeHorario(horaFinal)) {
+          console.log( "Os horários disponíveis são de 15 em 15 minutos. Ex: 20:00, 20:15, 20:30");
+          horaFinal = prompt("Informe a hora inicial (HH:mm): ");
+          continue;
+        }
+
+        if (!validarHoraAgendamento(horaInicial, horaFinal)) {
+          console.log("O horário final é anterior ao horário inicial");
+          horaFinal = prompt("Informe a hora inicial (HH:mm): ");
+          continue;
+        }
+        validaHorarioFinal = true;
+      }
 
       agenda.agendarConsulta({
-        paciente,
+        paciente: paciente,
         data_consulta: dataConsulta,
         hora_inicial: horaInicial,
         hora_final: horaFinal,
@@ -94,12 +149,13 @@ function agendamentoConsulta(): void {
 }
 
 function isCpfDuplicado(pacientes, cpf): boolean {
+  let isDuplicated: boolean = false;
   for (let i = 0; i < pacientes.length; i++) {
     if (pacientes[i].getCpf() == cpf) {
-      return true;
+      isDuplicated = true;
     }
   }
-  return false;
+  return isDuplicated;
 }
 
 function isCpfValido(cpf): boolean {
@@ -134,14 +190,61 @@ function nomeTemTamanhoMinimo(nome): boolean {
   return nome.length > Paciente.NOME_TAMANHO_MINIMO;
 }
 
-function formataData(data): boolean {}
+function validaFormatoData(data: string): boolean {
+  // Regex pra validar data no formato DD/MM/ANO
+  const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
 
-function validaData(data: Date): boolean {
-  return isNaN(data);
+  return regex.test(data);
 }
 
-function validaIdadeMinima(idade): boolean {
+function formataData(dataStr) {
+  const [dia, mes, ano] = dataStr.split("/").map(Number);
+  return new Date(ano, mes - 1, dia); // Meses no JavaScript são baseados em zero
+}
+
+function validaData(data: Date | null): boolean {
+  // Verifica se a data é válida
+  return data !== null && !isNaN(data.getTime());
+}
+
+function validaIdadeMinima(data_nasc) {
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - data_nasc.getFullYear();
+  const mes = hoje.getMonth() - data_nasc.getMonth();
+  if (mes < 0 || (mes === 0 && hoje.getDate() < data_nasc.getDate())) {
+    idade--;
+  }
   return idade > 13;
+}
+
+function validarHorario(horario: string): boolean {
+  const regex = /^([01]\d|2[0-3]):([0-5]\d)$/; // Formato HH:mm, com horas de 00 a 23 e minutos de 00 a 59
+  return regex.test(horario);
+}
+
+function validarDisponibilidadeHorario(horario: string): boolean {
+  if (!validarHorario(horario)) return false; // Primeiro, valida o formato
+
+  const [, horas, minutos] = horario.match(/^(\d{2}):(\d{2})$/) || [];
+  const minutosInt = parseInt(minutos, 10);
+
+  // Verifica se os minutos são múltiplos de 15
+  return minutosInt % 15 === 0;
+}
+
+function validarHoraAgendamento(
+  horaInicial: string,
+  horaFinal: string,
+): boolean {
+  if (!validarHorario(horaInicial) || !validarHorario(horaFinal)) return false;
+
+  const [horasInicial, minutosInicial] = horaInicial.split(":").map(Number);
+  const [horasFinal, minutosFinal] = horaFinal.split(":").map(Number);
+
+  const totalMinutosInicial = horasInicial * 60 + minutosInicial;
+  const totalMinutosFinal = horasFinal * 60 + minutosFinal;
+
+  return totalMinutosFinal > totalMinutosInicial;
 }
 
 function cadastrarPaciente() {
@@ -157,17 +260,18 @@ function cadastrarPaciente() {
 
       if (!isCpfValido(cpf)) {
         console.log("CPF não é válido");
+        cpf = prompt("Informe um CPF válido: ");
         continue;
       }
 
       if (isCpfDuplicado(pacientes, cpf)) {
         console.log("CPF já cadastrado");
+        cpf = prompt("Informe um CPF válido: ");
         continue;
       }
 
       cpfValido = true;
     }
-
 
     let nome = prompt("Informe o nome: ");
     while (!nomeValido) {
@@ -175,24 +279,40 @@ function cadastrarPaciente() {
         console.log(
           `Nome deve ter no mínimo ${Paciente.NOME_TAMANHO_MINIMO} caracteres `,
         );
+        nome = prompt("Informe o nome: ");
         continue;
       }
 
       nomeValido = true;
     }
 
-    const dataNasc = new Date(prompt("Informe a data de nascimento (DD-MM-YYYY): "));
     const dataAtual = new Date();
+    var dataNasc = new Date();
 
+    var dataNascStr = prompt("Informe a data de nascimento (DD/MM/YYYY): ");
     while (!dataValida) {
+      if (!validaFormatoData(dataNascStr)) {
+        console.log("Data deve ser no formato DD/MM/YYYY");
+        dataNascStr = prompt("Informe a data de nascimento (DD/MM/YYYY): ");
+        continue;
+      }
 
+      dataNasc = formataData(dataNascStr);
       if (!validaData(dataNasc)) {
         console.log("Data de Nascimento inválida");
+        dataNascStr = prompt("Informe a data de nascimento (DD/MM/YYYY): ");
+        continue;
+      }
+
+      if (!validaIdadeMinima(dataNasc)) {
+        console.log("Paciente deve ter no mínimo 13 anos de idade");
+        dataNascStr = prompt("Informe a data de nascimento (DD/MM/YYYY): ");
         continue;
       }
 
       if (dataNasc > dataAtual) {
         console.log("Data de Nascimento não pode ser após a data presente.");
+        dataNascStr = prompt("Informe a data de nascimento (DD/MM/YYYY): ");
         continue;
       }
 
@@ -228,7 +348,7 @@ function menuAgenda() {
 
     switch (option) {
       case 1:
-        agendamentoConsulta();
+        agendarConsulta();
       case 2:
         console.log("Listando agenda...");
         agenda.printAgendaFormatada();
