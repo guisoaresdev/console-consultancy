@@ -1,12 +1,12 @@
-Esse é o repositório do segundo desafio do processo de residência da iUUL
+This repository contains the challenge from the software development residency program at iUUL which was to develop a simple consultancy system for inserting patients and schedule appointments
 
-## Instalação
+## Installing
 
 ```
 npm install
 ```
 
-## Rodando o projeto
+## Running the project
 
 ```
 npm start
